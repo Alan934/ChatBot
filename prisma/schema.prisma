@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Option {
+  CAPTURE
+  MENU
+  READ
+}
+
+enum Rol {
+  ADMIN
+  REDACTOR
+  EMPLEADO
+}
+
+enum TypeMessage {
+  NUMBER
+  NAME
+  DEFAULT
+}
+
+model profiles {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  email String  @unique
+  phone String
+  name String
+  password String
+
+  google Boolean @default(false)
+
+  role Rol
+
+  enterprise enterprises @relation(fields: [enterpriseId], references: [id])
+  enterpriseId String
+
+  chatbot       chatbots? @relation(fields: [chatbotId], references: [id])
+  chatbotId     String?
+}
+
+model chatbots {
+  id          String     @id @default(uuid())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  qrCode      String?
+  connected   Boolean    @default(false)
+  profiles    profiles[]
+  flow        flows?     @relation(fields: [flowId], references: [id])
+  flowId      String?
+}
+
+model clients {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  username        String
+  phone           String
+
+  enterprise      enterprises @relation(fields: [enterpriseId], references: [id])
+  enterpriseId    String
+}
+
+model enterprises {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  name            String
+  phone           String
+  connected       Boolean
+
+  profiles        profiles[]
+
+  clients         clients[]
+
+  Message         messages[]
+
+  pricingPlan     pricing_plans  @relation(fields: [pricingPlanId], references: [id])
+  pricingPlanId   String
+}
+
+model flows {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  name            String
+  description     String
+
+  Message         messages[]
+
+  PricingPlan     pricing_plans[]
+
+  chatbots        chatbots[]
+}
+
+model messages {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  numOrder        Int
+  name            String
+  body            String
+  option          Option
+  typeMessage     TypeMessage
+  showName        Boolean
+
+  enterprise      enterprises @relation(fields: [enterpriseId], references: [id])
+  enterpriseId    String
+
+  flow            flows @relation(fields: [flowId], references: [id])
+  flowId          String
+
+  parentMessage   messages? @relation("ParentMessage", fields: [parentMessageId], references: [id])
+  parentMessageId String?
+
+  childMessages   messages[] @relation("ParentMessage")
+}
+
+model pricing_plans {
+  id         String   @id @default(uuid())
+  deletedAt  DateTime? @default("9999-12-12T00:00:00.000Z")
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  available  Boolean @default(true)
+
+  name            String
+  description     String
+  price           Float
+  
+  enterprises     enterprises[]
+
+  flows           flows[]
+}
